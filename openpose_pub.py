@@ -3,7 +3,7 @@ from openpose_msg.msg import Openpose
 from sensor_msgs.msg import Image
 import glob, json, os, time
 from cv_bridge import CvBridge, CvBridgeError
-# from PIL import Image
+from parameters import Parameters
 
 
 def talker(path, img_path, open_path):
@@ -12,7 +12,9 @@ def talker(path, img_path, open_path):
         os.remove(f)
     for f in glob.glob(img_path + '/*'):
         os.remove(f)
+    # The Publisher for Openpose key point information
     pub = rospy.Publisher('openpose_img', Openpose, queue_size=5)
+    # The Publisher
     pub_img = rospy.Publisher('openpose_out', Image, queue_size=5)
     rospy.init_node('openpose_ros', anonymous=True)
     rate = rospy.Rate(20)  # 20hz
@@ -20,8 +22,7 @@ def talker(path, img_path, open_path):
     keypoints = Openpose()
     os.chdir(open_path)
     os.system("gnome-terminal -e 'bash -c \"./build/examples/openpose/openpose.bin "
-              + "--write_json /home/icl-baby/test-openpose/openpose --write_images /home/icl-baby/test-openpose/imgs --display 0; exec bash\"'")
-    # --write_video /home/icl-baby/collection_data.avi --write_video_fps 22
+              + "--write_json " + path + " --write_images " + img_path + " --display 0; exec bash\"'")
     while not rospy.is_shutdown():
         x = len(glob.glob(path + '/*')) - 1
         if x >= 0 and x > x_prev:
@@ -36,7 +37,6 @@ def talker(path, img_path, open_path):
                 pub.publish(keypoints)
                 rospy.loginfo('Published keypoints')
                 img_file = '/%012d_rendered.png' % x
-                # Image.open(img_path + img_file).convert("RGB").save(img_path + img_file)
                 if os.path.exists(img_path + img_file):
                     img = cv2.imread(img_path + img_file)
                     if img is not None:
@@ -52,8 +52,9 @@ def talker(path, img_path, open_path):
 
 
 if __name__ == '__main__':
+    param_master = Parameters()
     try:
-        talker('/home/icl-baby/test-openpose/openpose', '/home/icl-baby/test-openpose/imgs',
-               '/home/icl-baby/openpose')
+        talker(param_master.json_path, param_master.img_path,
+               param_master.openpose_path)
     except rospy.ROSInterruptException:
         pass
