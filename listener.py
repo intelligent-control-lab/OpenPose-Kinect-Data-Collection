@@ -22,6 +22,11 @@ pub_view = rospy.Publisher('final_imgs', Image, queue_size=3)
 
 
 def on_press(key):
+    """
+
+    :param key:
+    :return:
+    """
     global flag, data_processor
     try:
         if key.char == 'b':
@@ -92,13 +97,25 @@ def display_img(img, t):
 
 
 def in_range(r_h):
+    """
+    Check if the predicted OpenPose pixel coordinates are valid
+    :param r_h: the predicted OpenPose pixel coordinates
+    :return: whether r_h is a valid prediction
+    """
     return (r_h[0] > 0) and (r_h[0] < param_master.height) and (r_h[1] > 0) and (r_h[1] < param_master.width)
 
 
+# r_buffer stores the most recent 5 positions of the right hand
 r_buffer = []
 
 
 def callback(data, points, img):
+    """
+    The callback for the listeners
+    :param data: the depth image from kinect
+    :param points: the keypoints from openpose_pub
+    :param img: the image from openpose_pub
+    """
     global flag, data_processor, r_buffer
     bridge = CvBridge()
     try:
@@ -127,13 +144,13 @@ def callback(data, points, img):
                 if len(r_buffer) > 5:
                     r_buffer.pop(0)
                 if len(r_buffer) == 5:
-                    # Visualize the image here
                     # Convert real world data back to the image in pixels
                     new_traj = []
                     for t in r_buffer:
                         for i in range(len(t)):
                             nt = [int(t[0]), int(t[1])]
                             new_traj.append(nt)
+                    # Visualize the image here
                     display_img(img, new_traj)
             rospy.loginfo(r_h)
     except CvBridgeError as e:

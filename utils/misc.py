@@ -2,7 +2,7 @@ import os, time, subprocess, sys
 from pynput import keyboard
 
 """
-This file contains multiple functions
+This file contains multiple functions useful during program execution
 """
 
 def launch_windows(curr_path, mode):
@@ -28,6 +28,9 @@ def launch_windows(curr_path, mode):
 
 
 def close_windows():
+    """
+    Shut down all the related processes
+    """
     out_process = subprocess.check_output(['ps', '-ef']).split('\n')
     for str in out_process:
         if ('kinetic/' in str) or ('openpose' in str) or ('video1' in str):
@@ -36,17 +39,28 @@ def close_windows():
             i = 0
             while str_arr[i] == '':
                 i = i + 1
+            # The pid of the process
             id = str_arr[i]
+            # Kill the process using the pid
             os.system('kill -9 %s' % id)
 
 
 def on_release_standard(key):
+    """
+    Standard on_release listener for pynput.keyboard in this package
+    :param key: the released key
+    """
     if key == keyboard.Key.esc:
         # Stop listener
         return False
 
 
 def on_press_standard(key):
+    """
+    A simple on_press listener that allows the user to shut down all
+    processes when the key "q" is pressed
+    :param key: the pressed key
+    """
     try:
         if key.char == 'q':
             close_windows()
@@ -56,6 +70,12 @@ def on_press_standard(key):
 
 
 def judge_outlier(a):
+    """
+    Judge if the depth of the input coordinate is valid,
+    since misjudging depth is common when using the kinect camera
+    :param a: the coordinate as a list
+    :return: whether the depth is valid
+    """
     flag = True
     k = a[2]
     flag = flag and (k < 400 or k > 1000)
@@ -63,7 +83,14 @@ def judge_outlier(a):
 
 
 def convert_real(p):
+    """
+    Convert the (Openpose_x, Openpose_y, Kinect_z) coordinates approximately
+    into the (real_world_x, real_world_y, Kinect_z) coordinates
+    :param p: the original set of coordinates
+    :return: the converted coordinates
+    """
     global f
+    # TODO: FILL IN F
     x_v = p[0]
     y_v = p[1]
     z_w = p[2]
@@ -79,6 +106,12 @@ def convert_real(p):
 
 
 def convert_back(p):
+    """
+    Convert the (real_world_x, real_world_y, Kinect_z) coordinates back into
+    the (Openpose_x, Openpose_y) coordinates
+    :param p: the original coordinates
+    :return: the converted coordinates
+    """
     global f
     x_w = p[0]
     y_w = p[1]
@@ -86,5 +119,5 @@ def convert_back(p):
 
     p[0] = int(x_w * f / z_w)
     p[1] = int(y_w * f / z_w)
-    # p.pop(2)
+    p.pop(2)
     return p
