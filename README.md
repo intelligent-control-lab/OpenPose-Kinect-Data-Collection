@@ -58,3 +58,5 @@ parameters to your desired values.
 collecting a series of action data, press `e` to finish
  action collection. Press `q` to shut down all the processes
  at any time.
+ 
+> **Note:** Expect delays in the visualization, especially if you choose "hd".

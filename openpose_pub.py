@@ -22,11 +22,11 @@ def talker(json_path, img_path, open_path):
     for f in glob.glob(img_path + '/*'):
         os.remove(f)
     # The Publisher for Openpose key point information
-    pub = rospy.Publisher('openpose_img', Openpose, queue_size=5)
+    pub = rospy.Publisher('openpose_img', Openpose, queue_size=2)
     # The Publisher for Openpose rendered image information
-    pub_img = rospy.Publisher('openpose_out', Image, queue_size=5)
+    pub_img = rospy.Publisher('openpose_out', Image, queue_size=2)
     rospy.init_node('openpose_ros', anonymous=True)
-    rate = rospy.Rate(20)  # 20hz
+    rate = rospy.Rate(24)  # 20hz
 
     os.chdir(open_path)
     os.system("gnome-terminal -e 'bash -c \"./build/examples/openpose/openpose.bin "
@@ -37,7 +37,7 @@ def talker(json_path, img_path, open_path):
 
     while not rospy.is_shutdown():
         # The index of the json file
-        x = len(glob.glob(json_path + '/*')) - 1
+        x = len(glob.glob(json_path + '/*')) - 2
         if x >= 0 and x > x_prev:
             # New data has been passed
             json_file = '/%012d_keypoints.json' % x
@@ -47,19 +47,21 @@ def talker(json_path, img_path, open_path):
             if len(f['people']) != 0 and os.path.exists(img_path + img_file):
                 kp = f['people'][0]['pose_keypoints_2d']
                 img = cv2.imread(img_path + img_file)
-                # Making the Openpose Msg and Image instances
-                keypoints.data = [int(kp[j]) for j in range(len(kp))
-                                  if j not in [3 * i + 2 for i in range(22)]]
-                image_message = bridge.cv2_to_imgmsg(img, encoding="rgb8")
-                # Stamping the time
-                keypoints.header.stamp = rospy.Time.now()
-                image_message.header.stamp = rospy.Time.now()
-                # Publish the keypoints
-                pub.publish(keypoints)
-                pub_img.publish(image_message)
+                if img is not None:
+                    # Making the Openpose Msg and Image instances
+                    keypoints.data = [int(kp[j]) for j in range(len(kp))
+                                      if j not in [3 * i + 2 for i in range(22)]]
 
-                os.remove(img_path + img_file)
-                rospy.loginfo('Published keypoints and image')
+                    image_message = bridge.cv2_to_imgmsg(img, encoding="rgb8")
+                    # Stamping the time
+                    keypoints.header.stamp = rospy.Time.now()
+                    image_message.header.stamp = rospy.Time.now()
+                    # Publish the keypoints
+                    pub.publish(keypoints)
+                    pub_img.publish(image_message)
+
+                    os.remove(img_path + img_file)
+                    rospy.loginfo('Published keypoints and image')
         x_prev = x
         rate.sleep()
 

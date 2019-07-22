@@ -1,9 +1,12 @@
-import os, time, subprocess, sys
+import os, subprocess, math
 from pynput import keyboard
 
 """
 This file contains multiple functions useful during program execution
 """
+
+# The focal length of the Kinect camera
+f = 0
 
 def launch_windows(curr_path, mode):
     """
@@ -11,6 +14,7 @@ def launch_windows(curr_path, mode):
     :param curr_path: current working directory
     :param mode: mode for kinect camera; sd for 512x424 image, qhd for 960x540 image, hd for 1920x1080 image
     """
+    global f
     subprocess.call("gnome-terminal -e 'bash -c \"roslaunch kinect2_bridge kinect2_bridge.launch; exec bash \"'",
                     shell=True)
     if mode == 'sd':
@@ -20,6 +24,7 @@ def launch_windows(curr_path, mode):
     else:
         mode = 'qhd'
         width, height = 960, 540
+    f = (height / 2) / math.tan(1.0 / 6 * math.pi)
     os.system(
         "gnome-terminal -e 'bash -c \"rosrun virtual_cam stream _device:=/dev/video1 _width:=%d _height:=%d _fourcc:=YV12 image:=/kinect2/%s/image_color_rect; exec bash \"'" % (width, height, mode))
     os.chdir(curr_path)
@@ -90,7 +95,6 @@ def convert_real(p):
     :return: the converted coordinates
     """
     global f
-    # TODO: FILL IN F
     x_v = p[0]
     y_v = p[1]
     z_w = p[2]
